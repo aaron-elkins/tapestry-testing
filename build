@@ -1,0 +1,4 @@
+#env /usr/bin/sh
+
+go build TapestryD.go 
+go build TapestryNetworking.go
