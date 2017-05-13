@@ -23,7 +23,6 @@ func getProcessIDByPort(proto string, ip string, port int) int32 {
 
 	var rPid int32 = 0
 	for _, pid := range pids {
-		fmt.Printf("PID: %d\n", pid)
 		connectionStats, _ := psunet.ConnectionsPid(proto, pid)
 		for _, stat := range connectionStats {
 			if ip == stat.Laddr.IP && uint32(port) == stat.Laddr.Port {
