@@ -17,13 +17,22 @@ func reversePids(pids []int32) {
 }
 
 func getProcessIDByPort(proto string, ip string, port int) int32 {
-	pids, _ := process.Pids()
+	var rPid int32 = 0
+	pids, err := process.Pids()
+
+	if err != nil {
+		fmt.Printf("Can not get PIDs, %s\n", err.Error())
+		return 0
+	}
 
 	reversePids(pids)
 
-	var rPid int32 = 0
 	for _, pid := range pids {
-		connectionStats, _ := psunet.ConnectionsPid(proto, pid)
+		connectionStats, err := psunet.ConnectionsPid(proto, pid)
+		if err != nil {
+			fmt.Printf("Can not get connections for PID:%d, %s\n", pid, err.Error())
+			continue
+		}
 		for _, stat := range connectionStats {
 			if ip == stat.Laddr.IP && uint32(port) == stat.Laddr.Port {
 				rPid = pid
@@ -32,7 +41,7 @@ func getProcessIDByPort(proto string, ip string, port int) int32 {
 		}
 
 	}
-	return rPid
+	return 0
 }
 
 func connToConn(src net.Conn, dst net.Conn) {
