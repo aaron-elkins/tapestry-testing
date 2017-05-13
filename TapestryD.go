@@ -2,10 +2,39 @@ package main
 
 import (
 	"fmt"
+	psunet "github.com/shirou/gopsutil/net"
+	"github.com/shirou/gopsutil/process"
 	"net"
 	"pf"
 	"strconv"
+	"time"
 )
+
+func reversePids(pids []int32) {
+	for i, j := 0, len(pids)-1; i < j; i, j = i+1, j-1 {
+		pids[i], pids[j] = pids[j], pids[i]
+	}
+}
+
+func getProcessIDByPort(proto string, ip string, port int) int32 {
+	pids, _ := process.Pids()
+
+	reversePids(pids)
+
+	var rPid int32 = 0
+	for _, pid := range pids {
+		fmt.Printf("PID: %d\n", pid)
+		connectionStats, _ := psunet.ConnectionsPid(proto, pid)
+		for _, stat := range connectionStats {
+			if ip == stat.Laddr.IP && uint32(port) == stat.Laddr.Port {
+				rPid = pid
+				return rPid
+			}
+		}
+
+	}
+	return rPid
+}
 
 func connToConn(src net.Conn, dst net.Conn) {
 	for {
@@ -59,6 +88,11 @@ func main() {
 		}
 
 		fmt.Println("Handle connection:" + conn.RemoteAddr().String() + "=>" + rIP.String() + ":" + strconv.Itoa(rPort))
+		start := time.Now()
+		pid := getProcessIDByPort("tcp", srcIP.String(), srcPort)
+		elapsed := time.Since(start)
+		fmt.Printf("getProcessIDByPort() took %s\n", elapsed)
+		fmt.Printf("PID: %d want to connect to %s:%d\n", pid, rIP, rPort)
 		go handleConn(conn, srcIP, srcPort, rIP, rPort)
 	}
 }

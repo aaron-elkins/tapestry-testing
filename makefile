@@ -1,10 +1,10 @@
 CC=go
 
-all: TapestryD TapestryNetworking
+all: TapestryD N/TapestryNetworking
 
 TapestryD: TapestryD.go
 	$(CC) build TapestryD.go
 
-TapestryNetworking: TapestryNetworking.go
-	$(CC) build TapestryNetworking.go
+N/TapestryNetworking: N/TapestryNetworking.go
+	$(CC) build N/TapestryNetworking.go
 
