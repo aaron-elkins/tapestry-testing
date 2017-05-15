@@ -50,7 +50,7 @@ func getNatTable() string {
 // Return empty string if not found
 func getOriginDest(king string, natTable string, src string, dst string) string {
 	lines := strings.Split(natTable, "\n")
-	p := king + " (?P<dst>.+) <- (?P<orig>.+) <- (?P<src>\\S+)"
+	p := king + ` (?P<dst>.+) <- (?P<orig>.+) <- (?P<src>\S+)`
 	re := myRegexp{regexp.MustCompile(p)}
 
 	for _, line := range lines {
