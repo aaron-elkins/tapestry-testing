@@ -7,9 +7,37 @@ import (
 	"net"
 	"os/exec"
 	"pf"
+	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
+
+// embed regexp.Regexp in a new type so we can extend it
+type myRegexp struct {
+	*regexp.Regexp
+}
+
+// add a new method to our new regular expression type
+func (r *myRegexp) FindStringSubmatchMap(s string) map[string]string {
+	captures := make(map[string]string)
+
+	match := r.FindStringSubmatch(s)
+	if match == nil {
+		return captures
+	}
+
+	for i, name := range r.SubexpNames() {
+		// Ignore the whole regexp match and unnamed groups
+		if i == 0 || name == "" {
+			continue
+		}
+
+		captures[name] = match[i]
+
+	}
+	return captures
+}
 
 func getNatTable() string {
 	out, err := exec.Command("pfctl", "-ss").Output()
@@ -17,6 +45,27 @@ func getNatTable() string {
 		fmt.Printf("Read NAT table failed: %s", err.Error())
 	}
 	return string(out)
+}
+
+// Return empty string if not found
+func getOriginDest(king string, natTable string, src string, dst string) string {
+	lines := strings.Split(natTable, "\n")
+	p := king + " (?P<dst>.+) <- (?P<orig>.+) <- (?P<src>\\S+)"
+	re := myRegexp{regexp.MustCompile(p)}
+
+	for _, line := range lines {
+		m := re.FindStringSubmatchMap(line)
+		if m != nil {
+			s := m["src"]
+			d := m["dst"]
+			orig := m["orig"]
+			if s == src && d == dst {
+				return orig
+			}
+		}
+	}
+
+	return ""
 }
 
 func reversePids(pids []int32) {
@@ -87,23 +136,12 @@ func readUDP(udpServer *net.UDPConn) {
 		srcAddr := addr
 		dstAddr, _ := net.ResolveUDPAddr("udp", "127.0.0.1:11235")
 
-		srcIP := srcAddr.IP
-		srcPort := srcAddr.Port
-
-		destIP := dstAddr.IP
-		destPort := dstAddr.Port
-
-		fmt.Printf("Src: %s:%d Dst: %s:%d\n", srcIP.String(), srcPort, destIP.String(), destPort)
+		fmt.Printf("Src: %s Dst: %s\n", srcAddr.String(), dstAddr.String())
 
 		natTable := getNatTable()
-		fmt.Printf("%s\n", natTable)
+		orig := getOriginDest("udp", natTable, srcAddr.String(), dstAddr.String())
 
-		if err != nil {
-			fmt.Printf("Query Nat fail! %s", err.Error())
-			continue
-		}
-
-		//fmt.Printf("Remote IP: %s Port: %d\n", rIP.String(), rPort)
+		fmt.Printf("Remote IP: %s\n", orig)
 		fmt.Println("Received ", string(buf[0:n]), " from ", addr)
 
 		if err != nil {
