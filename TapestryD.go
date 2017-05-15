@@ -5,10 +5,19 @@ import (
 	psunet "github.com/shirou/gopsutil/net"
 	"github.com/shirou/gopsutil/process"
 	"net"
+	"os/exec"
 	"pf"
 	"strconv"
 	"time"
 )
+
+func getNatTable() string {
+	out, err := exec.Command("pfctl", "-ss").Output()
+	if err != nil {
+		fmt.Printf("Read NAT table failed: %s", err.Error())
+	}
+	return string(out)
+}
 
 func reversePids(pids []int32) {
 	for i, j := 0, len(pids)-1; i < j; i, j = i+1, j-1 {
@@ -86,14 +95,15 @@ func readUDP(udpServer *net.UDPConn) {
 
 		fmt.Printf("Src: %s:%d Dst: %s:%d\n", srcIP.String(), srcPort, destIP.String(), destPort)
 
-		rIP, rPort, err := pf.QueryNat(pf.AF_INET, pf.IPPROTO_UDP, srcIP, srcPort, destIP, destPort)
+		natTable := getNatTable()
+		fmt.Printf("%s\n", natTable)
 
 		if err != nil {
 			fmt.Printf("Query Nat fail! %s", err.Error())
 			continue
 		}
 
-		fmt.Printf("Remote IP: %s Port: %d\n", rIP.String(), rPort)
+		//fmt.Printf("Remote IP: %s Port: %d\n", rIP.String(), rPort)
 		fmt.Println("Received ", string(buf[0:n]), " from ", addr)
 
 		if err != nil {
