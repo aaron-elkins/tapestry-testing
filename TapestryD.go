@@ -69,11 +69,51 @@ func handleConn(conn net.Conn, src net.IP, srcPort int, dst net.IP, dstPort int)
 	go connToConn(dstConn, conn)
 }
 
+func readUDP(udpServer *net.UDPConn) {
+	buf := make([]byte, 1024)
+
+	for {
+		n, addr, err := udpServer.ReadFromUDP(buf)
+
+		srcAddr := addr
+		dstAddr, _ := net.ResolveUDPAddr("udp", "127.0.0.1:11235")
+
+		srcIP := srcAddr.IP
+		srcPort := srcAddr.Port
+
+		destIP := dstAddr.IP
+		destPort := dstAddr.Port
+
+		fmt.Printf("Src: %s:%d Dst: %s:%d\n", srcIP.String(), srcPort, destIP.String(), destPort)
+
+		rIP, rPort, err := pf.QueryNat(pf.AF_INET, pf.IPPROTO_UDP, srcIP, srcPort, destIP, destPort)
+
+		if err != nil {
+			fmt.Printf("Query Nat fail! %s", err.Error())
+			continue
+		}
+
+		fmt.Printf("Remote IP: %s Port: %d\n", rIP.String(), rPort)
+		fmt.Println("Received ", string(buf[0:n]), " from ", addr)
+
+		if err != nil {
+			fmt.Println("Error: ", err)
+		}
+	}
+}
+
 func main() {
 	fmt.Println("Starting server...")
 
-	// Listen on 127.0.0.1:11235
+	fmt.Printf("TCP: %d UDP: %d\n", pf.IPPROTO_TCP, pf.IPPROTO_UDP)
+	// Listen TCP on 0.0.0.0:11235
 	ln, _ := net.Listen("tcp", "0.0.0.0:11235")
+
+	// Listen UDP on 0.0.0.0:11235
+	localUDPAddr, _ := net.ResolveUDPAddr("udp", "0.0.0.0:11235")
+	udpServer, _ := net.ListenUDP("udp4", localUDPAddr)
+
+	go readUDP(udpServer)
 
 	for {
 
@@ -82,16 +122,16 @@ func main() {
 		srcAddr := conn.RemoteAddr()
 		destAddr := conn.LocalAddr()
 
+		fmt.Printf("[TCP] Src: %s Dst: %s\n", srcAddr, destAddr)
 		srcIP := srcAddr.(*net.TCPAddr).IP
 		srcPort := srcAddr.(*net.TCPAddr).Port
 
 		destIP := destAddr.(*net.TCPAddr).IP
 		destPort := destAddr.(*net.TCPAddr).Port
-
 		rIP, rPort, err := pf.QueryNat(pf.AF_INET, pf.IPPROTO_TCP, srcIP, srcPort, destIP, destPort)
 
 		if err != nil {
-			fmt.Println("Query Nat fail!")
+			fmt.Printf("Query Nat fail! (TCP) %s\n", err.Error())
 			continue
 		}
 
