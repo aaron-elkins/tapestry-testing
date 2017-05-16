@@ -6,11 +6,9 @@ import (
 	"github.com/shirou/gopsutil/process"
 	"net"
 	"os/exec"
-	"pf"
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type Interface struct {
@@ -230,19 +228,13 @@ func main() {
 
 		destIP := destAddr.(*net.TCPAddr).IP
 		destPort := destAddr.(*net.TCPAddr).Port
-		rIP, rPort, err := pf.QueryNat(pf.AF_INET, pf.IPPROTO_TCP, srcIP, srcPort, destIP, destPort)
 
-		if err != nil {
-			fmt.Printf("Query Nat fail! (TCP) %s\n", err.Error())
-			continue
-		}
-
-		fmt.Println("Handle connection:" + conn.RemoteAddr().String() + "=>" + rIP.String() + ":" + strconv.Itoa(rPort))
-		start := time.Now()
-		pid := getProcessIDByPort("tcp", srcIP.String(), srcPort)
-		elapsed := time.Since(start)
-		fmt.Printf("getProcessIDByPort() took %s\n", elapsed)
-		fmt.Printf("PID: %d want to connect to %s:%d\n", pid, rIP, rPort)
-		go handleConn(conn, srcIP, srcPort, rIP, rPort)
+		fmt.Printf("%s:%d %s:%d\n", srcIP.String(), srcPort, destIP, destPort)
+		//start := time.Now()
+		//pid := getProcessIDByPort("tcp", srcIP.String(), srcPort)
+		//elapsed := time.Since(start)
+		//fmt.Printf("getProcessIDByPort() took %s\n", elapsed)
+		//fmt.Printf("PID: %d want to connect to %s:%d\n", pid, rIP, rPort)
+		//go handleConn(conn, srcIP, srcPort, rIP, rPort)
 	}
 }
