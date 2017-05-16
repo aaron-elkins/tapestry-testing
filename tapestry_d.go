@@ -13,6 +13,58 @@ import (
 	"time"
 )
 
+type Interface struct {
+	Name  string
+	Local bool
+}
+
+func getInterfaces() []Interface {
+	out, err := exec.Command("ifconfig").Output()
+	if err != nil {
+		fmt.Printf("Read `ifconfig` output failed: %s", err.Error())
+	}
+
+	str := string(out)
+	var blocks []string
+	var block string
+	for i, r := range str {
+		c := string(r)
+		next := i + 1
+		block += c
+		if c == "\n" && (i == len(str)-1 || str[next] != '\t') {
+			blocks = append(blocks, block)
+			block = ""
+		}
+	}
+
+	var interfaces []Interface
+
+	for _, block = range blocks {
+		local := false
+		valid := false
+		if m, _ := regexp.MatchString("netmask", block); m {
+			valid = true
+		}
+
+		if m, _ := regexp.MatchString("127.0.0.1", block); m {
+			local = true
+		}
+
+		name := "None"
+		r, _ := regexp.Compile("(.+):")
+		m := r.FindStringSubmatch(block)
+		if len(m) > 1 {
+			name = m[1]
+		}
+		if valid {
+			itf := Interface{Name: name, Local: local}
+			interfaces = append(interfaces, itf)
+		}
+
+	}
+	return interfaces
+}
+
 // embed regexp.Regexp in a new type so we can extend it
 type myRegexp struct {
 	*regexp.Regexp
@@ -152,6 +204,9 @@ func readUDP(udpServer *net.UDPConn) {
 
 func main() {
 	fmt.Println("Starting server...")
+
+	interfaces := getInterfaces()
+	fmt.Printf("Active Interfaces: %v\n", interfaces)
 
 	fmt.Printf("TCP: %d UDP: %d\n", pf.IPPROTO_TCP, pf.IPPROTO_UDP)
 	// Listen TCP on 0.0.0.0:11235
