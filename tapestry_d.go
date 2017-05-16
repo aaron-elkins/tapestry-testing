@@ -208,7 +208,6 @@ func main() {
 	interfaces := getInterfaces()
 	fmt.Printf("Active Interfaces: %v\n", interfaces)
 
-	fmt.Printf("TCP: %d UDP: %d\n", pf.IPPROTO_TCP, pf.IPPROTO_UDP)
 	// Listen TCP on 0.0.0.0:11235
 	ln, _ := net.Listen("tcp", "0.0.0.0:11235")
 
