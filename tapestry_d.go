@@ -51,7 +51,7 @@ func getInterfaces() []Interface {
 		}
 
 		name := "None"
-		r, _ := regexp.Compile("(.+):")
+		r, _ := regexp.Compile(`\A(.+):`)
 		m := r.FindStringSubmatch(block)
 		if len(m) > 1 {
 			name = m[1]
