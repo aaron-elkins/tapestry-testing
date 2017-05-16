@@ -1,3 +1,5 @@
+// LOG: git did not track `mv ...`
+
 package main
 
 import (
