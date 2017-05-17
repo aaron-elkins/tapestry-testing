@@ -14,6 +14,7 @@ import (
 type Interface struct {
 	Name  string
 	Local bool
+	IPv6  bool
 }
 
 func getInterfaces() []Interface {
@@ -40,12 +41,17 @@ func getInterfaces() []Interface {
 	for _, block = range blocks {
 		local := false
 		valid := false
+		IPv6 := false
 		if m, _ := regexp.MatchString("netmask", block); m {
 			valid = true
 		}
 
 		if m, _ := regexp.MatchString("127.0.0.1", block); m {
 			local = true
+		}
+
+		if m, _ := regexp.MatchString("inet6", block); m {
+			IPv6 = true
 		}
 
 		name := "None"
@@ -55,7 +61,7 @@ func getInterfaces() []Interface {
 			name = m[1]
 		}
 		if valid {
-			itf := Interface{Name: name, Local: local}
+			itf := Interface{Name: name, Local: local, IPv6: IPv6}
 			interfaces = append(interfaces, itf)
 		}
 

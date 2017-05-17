@@ -36,7 +36,7 @@ func TestGetInterfaces(t *testing.T) {
 
 	for _, intf := range interfaces {
 		name := intf.Name
-		fmt.Printf("Interface: %s\n", name)
+		fmt.Printf("Interface: %v\n", intf)
 		if !validInterfaceName(name) {
 			t.Errorf("getInterfaces() testing failed\n")
 		}
